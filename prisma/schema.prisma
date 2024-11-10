@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  email    String @unique
+  first_name String
+  last_name String
+  externalUserId String @unique
+  role String?
+  patient Patient?
+  doctor Doctor?
+}
+
+model Patient {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId @unique
+  user User @relation(fields: [userId],references: [id])
+  Appointments Appointment[]
+}
+
+model Doctor {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  imageUrl String @db.String
+  qualification String[] // MBBS,phd
+  specializations String[] // Dentist,Dermatologist, later added
+  experience Int // 5 // was a string
+  fees Int @default(0) // later added
+  awards String[]
+  gender String @db.String // later added
+  bio String @db.String // very later added
+  PhoneNo String? @db.String
+  userId String @db.ObjectId @unique
+  user User @relation(fields: [userId],references: [id])
+  Appointments Appointment[]
+}
+
+model Appointment{
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  patientId String @db.ObjectId
+  patient Patient @relation(fields: [patientId], references: [id])
+  doctorId String @db.ObjectId
+  doctor Doctor @relation(fields: [doctorId],references: [id])
+  reason String?
+  AppointmentDateTime DateTime
+  status String @default("Scheduled")
+  roomId String @db.ObjectId @unique
+  room Room @relation(fields: [roomId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  prescriptionUrl String? @db.String
+}
+
+model Room{
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  doctorPeerId String?
+  appointment Appointment?
+  patientPeerId String?
+}
