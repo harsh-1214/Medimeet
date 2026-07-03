@@ -1,6 +1,7 @@
 'use server'
 
 import { db } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 
 export const getPeerId = async(roomId : string,isDoctor : boolean) => {
@@ -61,6 +62,7 @@ export const updateAppointmentStatus = async(roomId : string) => {
                 status : 'completed'
             }
         })
+        revalidatePath('/u/appointment_history');
     } catch (err) {
         console.log('Internal Server Error');
     }

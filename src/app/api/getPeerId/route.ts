@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
 
     const otherPeerId = isDoctor === true ? room.patientPeerId : room.doctorPeerId;
 
+    console.log(otherPeerId)
+
     return NextResponse.json({success : true,peerId : otherPeerId});
   } catch (err) {
     console.log(err)

@@ -105,7 +105,7 @@ export default function Component({ appointments, title }: ComponentsProps) {
                           router.replace(`/stream/${appointment.roomId}`)
                         }
                         disabled={
-                          new Date() < appointment.AppointmentDateTime ||
+                          // new Date() < appointment.AppointmentDateTime ||
                           appointment.status.toLowerCase() === "completed"
                         }
                       >

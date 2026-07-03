@@ -112,10 +112,18 @@ const ProfileSetup = () => {
     e.preventDefault();
 
     const res = userSchema.safeParse(formData);
+    // Also check for res
     const roleResult = roleSchema.safeParse({ role });
     console.log(formData, typeof formData.fees);
 
-    if (res.success && roleResult.success) {
+    if (roleResult.success) {
+
+      // if(!(role === 'doctor' && res.success)){
+
+                    
+
+      // }
+
       startTransition(() => {
         updateUserProfile({ role, ...formData })
           .then(() => toast.success("Successfully Completed Profile"))

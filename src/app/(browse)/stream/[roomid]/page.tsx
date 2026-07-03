@@ -68,7 +68,7 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
     // testing is not completed
     const handleWindowClose = async() => {
       // Your logic here (e.g., alerting the user about unsaved changes)
-      if (!peerId || !peerobj || isDoctor === null) return;
+      if (!peerId || !peerobj || !isDoctor) return;
       const res = await axios.post("/api/resetPeerId", {
         roomId: params.roomid,
         isDoctor,
@@ -178,6 +178,8 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
 
     peerobj.on("call", (call) => {
       const { peer: callerId } = call;
+
+      console.log('Call', call);
       call.answer(stream);
 
       call.on("stream", (incomingStream) => {

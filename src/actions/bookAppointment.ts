@@ -3,6 +3,7 @@
 import { getAppointmentsByStatus } from "@/lib/appointment-service"
 import { getSelf } from "@/lib/auth-service"
 import { db } from "@/lib/db"
+import { setCookie } from "cookies-next"
 import { revalidatePath } from "next/cache"
 
 interface bookMyAppointmentArgs{
@@ -31,6 +32,8 @@ export const bookMyAppointment = async ( {reason,AppointmentDateTime,doctorId} :
              roomId : room.id
          }
      })
+
+     setCookie('role',self.role);
 
      revalidatePath('/u/dashboard/scheduled_appointments');
      revalidatePath('/u/dashboard/upcoming_Appointments');

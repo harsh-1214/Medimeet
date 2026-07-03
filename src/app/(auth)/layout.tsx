@@ -8,7 +8,7 @@ export default function AuthLayout({
 }) {
   return (
     <div className="h-full flex flex-col justify-center items-center gap-3">
-        <Logo/>
+        {/* <Logo/> */}
         {children}
     </div>
   );

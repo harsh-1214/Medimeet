@@ -77,7 +77,9 @@ export const SearchBar = () => {
       </form>
 
       <Hint label="Filters" side='top' asChild>
-        <FilterComponent/>
+        <Button variant="outline" className="">
+          <FilterComponent/>
+        </Button>
       </Hint>
     </div>
   );

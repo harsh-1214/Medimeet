@@ -87,7 +87,10 @@ export default function ScheduledAppointmentsComponent({
                     {/* <div className="hidden text-sm text-muted-foreground md:inline"></div> */}
                   </TableCell>
                   <TableCell className="tab:hidden table-cell">
-                    {appointment.reason}
+                    {/* {appointment.reason?.length && appointment.reason?.length > 10 ? appointment.reason?.substring(10) : appointment.reason} */}
+                    {
+                      appointment.reason
+                    }
                   </TableCell>
                   <TableCell className="tab:hidden table-cell">
                     <Badge className="text-xs" variant="secondary">
@@ -108,7 +111,7 @@ export default function ScheduledAppointmentsComponent({
                         router.replace(`/stream/${appointment.roomId}`)
                       }
                       disabled={
-                        new Date() < appointment.AppointmentDateTime ||
+                        // new Date() < appointment.AppointmentDateTime ||
                         appointment.status.toLowerCase() === "completed"
                       }
                     >

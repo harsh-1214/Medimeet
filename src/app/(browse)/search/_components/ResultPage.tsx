@@ -2,7 +2,6 @@
 
 import { getDoctors } from "@/actions/doctor";
 import { ResultCard } from "./ResultCard";
-import { LoaderCircleIcon } from "lucide-react";
 import { PaginationComp } from "./paginationComp";
 import { headers } from "next/headers";
 
@@ -59,7 +58,7 @@ export const ResultPage = async () => {
     queryParams[key] = value;
     // };
   });
-  console.log(queryParams,typeof queryParams);
+  // console.log(queryParams,typeof queryParams);
 
   const allDoctors = await getDoctors({ queryParams });
 

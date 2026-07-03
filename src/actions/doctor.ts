@@ -23,7 +23,7 @@ export const getDoctors = async ({
   try {
     // console.log()
     const doctors = await getAllDoctors(queryParams);
-    revalidatePath("/search");
+    revalidatePath("/search",'layout');
     return doctors;
   } catch (err: any) {
     // return {message : 'Internal Server Error',success : false,err : err}

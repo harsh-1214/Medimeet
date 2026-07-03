@@ -182,7 +182,8 @@ export const updateUserProfile = async ({
       throw new Error(result.error?.message);
     }
 
-    setCookie('role',role,{expires : new Date('2024-07-09T12:00:09.451Z')});
+    // setCookie('role',role,{expires : new Date('2024-07-09T12:00:09.451Z')});
+    setCookie('role',role);
 
     revalidatePath("/search");
   } catch (err: any) {

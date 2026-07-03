@@ -74,9 +74,7 @@ const FilterComponent = () => {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="">
           <FilterIcon />
-        </Button>
       </DialogTrigger>
       <DialogContent className="">
         <DialogHeader>

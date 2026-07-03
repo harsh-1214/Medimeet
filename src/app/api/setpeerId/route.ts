@@ -24,7 +24,7 @@ export async function POST (req : NextRequest){
                 [updateField] : peerId,
             }
         })
-        revalidatePath(`/stream/${roomId}`);
+        // revalidatePath(`/stream/${roomId}`);
         return NextResponse.json({success : true,peerId});
     } catch (error) {
         console.log(error)

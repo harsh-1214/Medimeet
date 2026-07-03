@@ -1,4 +1,5 @@
 import { getSelf } from "@/lib/auth-service";
+import { setCookie } from "cookies-next";
 import { redirect } from "next/navigation";
 import React from "react";
 
@@ -8,6 +9,7 @@ const DashBoardPage = async () => {
     redirect("/sign-in");
   }
   if (user.role?.toLowerCase() === "doctor") {
+    setCookie('role',user.role);
     redirect("/u/dashboard/scheduled_appointments");
   } else if (user.role?.toLowerCase() === "patient") {
     redirect("/u/dashboard/upcoming_Appointments");

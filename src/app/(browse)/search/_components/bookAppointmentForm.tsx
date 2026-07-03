@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { renderTimeViewClock } from '@mui/x-date-pickers/timeViewRenderers';
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "./DatePicker";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { enIN } from "date-fns/locale";
@@ -34,7 +34,7 @@ export function BookAppointment({doctorId,variant} : {doctorId: string,variant :
   const [isPending, startTransition] = useTransition();
   const [isEmptyDate, setIsEmptyDate] = useState(false);
   const [isInValidTime, setIsInValidTime] = useState(false);
-  // const closeRef = useRef<'button'>()
+  const closeRef = useRef<HTMLButtonElement>(null)
 
   function handleDate(val: Date | undefined) {
     setDate(val);
@@ -142,8 +142,8 @@ export function BookAppointment({doctorId,variant} : {doctorId: string,variant :
           </div>
         </div>
         <DialogFooter>
-          {/* <DialogClose> */}
-          {/* </DialogClose> */}
+        <DialogClose ref={closeRef}>
+        </DialogClose>
           <Button disabled={isPending} onClick={handleSubmit}>
             Submit
           </Button>

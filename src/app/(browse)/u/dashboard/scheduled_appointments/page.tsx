@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import React from "react";
 import ScheduledAppointmentsComponent from "../_components/scheduledAppointments";
 import { getUserInfo } from "@/actions/user";
+import { setCookie } from "cookies-next";
 
 const ScheduledAppointments = async () => {
 
@@ -20,6 +21,7 @@ const ScheduledAppointments = async () => {
 
   try {
     appointments = await getDoctorsAppointments("Scheduled");
+    setCookie('role','doctor');
   } catch {
     console.error("Please Login First");
     redirect("/sign-in");

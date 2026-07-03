@@ -4,6 +4,7 @@ import { getSelf } from "@/lib/auth-service";
 import { redirect } from "next/navigation";
 import ScheduledAppointmentsComponent from "../_components/scheduledAppointments";
 import { getDoctorsAppointments } from "@/actions/doctor";
+import { setCookie } from "cookies-next";
 
 
 
@@ -21,6 +22,7 @@ export default async function AppointmentHistory(){
 
     if(self.role.toLowerCase() === 'patient'){
         const appointments = await getAppointments("Completed");
+        setCookie('role',self.role.toLowerCase())
         return (
             <div>
                 <Component appointments = {appointments} title = {'Appointment History'}/>
@@ -29,6 +31,7 @@ export default async function AppointmentHistory(){
     }
     else{
         const doctorAppointments = await getDoctorsAppointments('Completed');
+        setCookie('role',self.role.toLowerCase())
         return (
             <div>
                 <ScheduledAppointmentsComponent appointments={doctorAppointments} title="Appointment History"/>
