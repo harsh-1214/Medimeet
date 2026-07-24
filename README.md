@@ -2,7 +2,7 @@
 
 > A production-ready, full-stack doctor-patient appointment scheduling and real-time video consultation platform built with Next.js 14, Clerk, Prisma, MongoDB, and PeerJS.
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live_App-0070f3?style=flat-square&logo=vercel)](https://your-medimeet-demo.vercel.app)
+<!-- [![Live Demo](https://img.shields.io/badge/Demo-Live_App-0070f3?style=flat-square&logo=vercel)](https://your-medimeet-demo.vercel.app) -->
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![Clerk](https://img.shields.io/badge/Auth-Clerk-6C47FF?style=flat-square&logo=clerk)](https://clerk.com/)
 [![Prisma](https://img.shields.io/badge/ORM-Prisma-2D3748?style=flat-square&logo=prisma)](https://www.prisma.io/)
