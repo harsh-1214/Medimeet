@@ -39,14 +39,14 @@ const ProfileSetup = () => {
   const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState({
     specializations: [],
-    fees: '',
+    fees: "",
     gender: "",
     qualification: [],
-    experience: '',
+    experience: "",
     awards: [],
     PhoneNo: "",
     imageUrl: "",
-    bio : '',
+    bio: "",
   });
 
   function handleChangeRole(val: string) {
@@ -66,20 +66,19 @@ const ProfileSetup = () => {
   }
 
   function handleArrayChange(e: ChangeEvent<HTMLTextAreaElement>) {
-
     const { value, name } = e.target;
-    if(name === 'bio'){
-      handleInputs(value,name);
+    if (name === "bio") {
+      handleInputs(value, name);
       return;
     }
     handleInputsArray(value, name);
   }
   const userSchema = z.object({
     qualification: z.array(
-      z.string({ message: "Qualifications Cannot be empty!" })
+      z.string({ message: "Qualifications Cannot be empty!" }),
     ),
     specializations: z.array(
-      z.string({ message: "Specialization Cannot be empty" })
+      z.string({ message: "Specialization Cannot be empty" }),
     ),
     experience: z.string().refine((value) => /^\d+$/.test(value), {
       message: "Must be a numeric string",
@@ -92,7 +91,7 @@ const ProfileSetup = () => {
     fees: z.string().refine((value) => /^\d+$/.test(value), {
       message: "Must be a numeric string",
     }),
-    bio : z.string({ message: "Bio Cannot be empty!" }),
+    bio: z.string({ message: "Bio Cannot be empty!" }),
   });
 
   const roleSchema = z.object({
@@ -117,23 +116,23 @@ const ProfileSetup = () => {
     console.log(formData, typeof formData.fees);
 
     if (roleResult.success) {
-
       // if(!(role === 'doctor' && res.success)){
-
-                    
 
       // }
 
       startTransition(() => {
+        console.log("Submitting form data:", formData, role);
         updateUserProfile({ role, ...formData })
-          .then(() => toast.success("Successfully Completed Profile"))
+          .then(() => {
+            toast.success("Successfully Completed Profile");
+            if (role === "doctor") {
+              router.replace("/u/dashboard/scheduled_appointments");
+            } else {
+              router.replace("/u/dashboard/upcoming_Appointments");
+            }
+          })
           .catch((err) => toast.error(err.message || "Something went wrong"));
       });
-      if (role === "doctor") {
-        router.replace("/u/dashboard/scheduled_appointments");
-      } else {
-        router.replace("/u/dashboard/upcoming_Appointments");
-      }
     } else {
       toast.error(res.error?.message);
     }
@@ -205,8 +204,8 @@ const ProfileSetup = () => {
                 <Label htmlFor="Awards">
                   Your Award and Certifications
                   <span className=" text-gray-400 ml-1 leading-4">
-                    (Please type your Awards and Certifications by inserting commas in
-                    between)
+                    (Please type your Awards and Certifications by inserting
+                    commas in between)
                   </span>
                 </Label>
                 <Textarea
@@ -266,7 +265,7 @@ const ProfileSetup = () => {
                       }));
                     } else {
                       toast.error(
-                        "Failed to upload image, Please try again later"
+                        "Failed to upload image, Please try again later",
                       );
                     }
                   }}

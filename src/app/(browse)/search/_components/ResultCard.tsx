@@ -29,8 +29,8 @@ export const ResultCard = ({
   // flex flex-col md:flex-row items-center md:items-start md:space-x-6
   // rounded-lg shadow-lg flex p-4 items-center space-x-6 border-2
   return (
-    <div className="mx-auto container h-[30%]">
-      <div className="rounded-lg shadow-lg p-4 flex flex-col justify-center md:flex-row items-center md:justify-start md:items-start md:space-x-6 tab:space-y-2">
+    <div className="w-full">
+      <div className="rounded-lg shadow-lg p-4  flex flex-col justify-center md:flex-row items-center md:justify-start md:items-start md:space-x-6 tab:space-y-2">
         {/* Use Image component and add that image domain(url) in nextconfig */}
         <div>
           <Image

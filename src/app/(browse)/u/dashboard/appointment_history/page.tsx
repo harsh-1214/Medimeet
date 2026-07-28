@@ -19,10 +19,11 @@ export default async function AppointmentHistory(){
     if(!self.role){
         redirect('/profile-setup')
     }
+    // const { sessionClaims } = await auth();
+    // const role = sessionClaims?.metadata?.role?.toLowerCase();
 
     if(self.role.toLowerCase() === 'patient'){
         const appointments = await getAppointments("Completed");
-        setCookie('role',self.role.toLowerCase())
         return (
             <div>
                 <Component appointments = {appointments} title = {'Appointment History'}/>

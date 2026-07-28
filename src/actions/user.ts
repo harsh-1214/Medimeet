@@ -5,7 +5,8 @@ import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import {setCookie} from 'cookies-next'
+import { setCookie } from "cookies-next";
+import { clerkClient } from "@clerk/nextjs/server";
 
 // export const updatePatientProfile = async (values: Partial<Patient>) => {
 //   try {
@@ -67,10 +68,10 @@ export const getUserProfile = async () => {
 
 const userSchema = z.object({
   qualification: z.array(
-    z.string({ message: "Qualifications Cannot be empty!" })
+    z.string({ message: "Qualifications Cannot be empty!" }),
   ),
   specializations: z.array(
-    z.string({ message: "Specialization Cannot be empty" })
+    z.string({ message: "Specialization Cannot be empty" }),
   ),
   experience: z.string().refine((value) => /^\d+$/.test(value), {
     message: "Must be a numeric string",
@@ -118,15 +119,18 @@ export const updateUserProfile = async ({
 
   try {
     const self = await getSelf();
+    console.log(self);
 
     if (result.success && role === "patient") {
       // Create patient record
+
       await db.patient.create({
         data: {
           userId: self.id,
         },
       });
 
+      console.log("Patient record created successfully");
       // Update User Record
       await db.user.update({
         where: {
@@ -136,9 +140,11 @@ export const updateUserProfile = async ({
           role,
         },
       });
+      console.log("User role updated to patient successfully");
     } else if (result.success && role === "doctor") {
       // Create Doctor Record
 
+      console.log('Doctor role selected, validating doctor profile data...');
       const result = userSchema.safeParse({
         qualification,
         gender,
@@ -148,9 +154,12 @@ export const updateUserProfile = async ({
         experience,
         PhoneNo,
         imageUrl,
+        bio
       });
 
       if (result.success) {
+
+        console.log('Doctor profile data validated successfully, creating doctor record...');
         await db.doctor.create({
           data: {
             qualification,
@@ -165,7 +174,9 @@ export const updateUserProfile = async ({
             bio,
           },
         });
+        console.log("Doctor record created successfully");
 
+        console.log('Updating user role to doctor...');
         // Update User Record
         await db.user.update({
           where: {
@@ -175,15 +186,31 @@ export const updateUserProfile = async ({
             role,
           },
         });
+        console.log("User role updated to doctor successfully");
       } else {
+        console.error('Doctor profile data validation failed:', result.error);
         throw new Error(result.error?.message);
       }
     } else {
       throw new Error(result.error?.message);
     }
 
-    // setCookie('role',role,{expires : new Date('2024-07-09T12:00:09.451Z')});
-    setCookie('role',role);
+    setCookie("role", role, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: true,
+    });
+
+    await clerkClient.users.updateUserMetadata(self.externalUserId, {
+      publicMetadata: {
+        onboardingComplete: true,
+        role: role,
+      },
+    })
+    
+    const userData = await currentUser();
+    console.log(userData?.publicMetadata, "userData in public metadata");
+
 
     revalidatePath("/search");
   } catch (err: any) {
@@ -194,11 +221,11 @@ export const updateUserProfile = async ({
 export const getUserInfo = async () => {
   try {
     const self = await currentUser();
-    
+
     if (!self || !self.id) {
       throw new Error("Please Login First!");
     }
-  
+
     const user = await db.user.findUnique({
       where: {
         externalUserId: self.id,
@@ -217,13 +244,13 @@ export const getUserInfo = async () => {
       },
     });
 
-    console.log(user)
-  
+    console.log(user);
+
     if (!user) {
       throw new Error("User not found");
     }
     return user;
-  } catch (err : any) {
-    throw new Error('Please Login First')
+  } catch (err: any) {
+    throw new Error("Please Login First");
   }
 };

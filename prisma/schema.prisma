@@ -21,7 +21,7 @@ model User {
 model Patient {
   id       String @id @default(auto()) @map("_id") @db.ObjectId
   userId String @db.ObjectId @unique
-  user User @relation(fields: [userId],references: [id])
+  user User @relation(fields: [userId],references: [id] , onDelete: Cascade)
   Appointments Appointment[]
 }
 
@@ -37,21 +37,21 @@ model Doctor {
   bio String @db.String // very later added
   PhoneNo String? @db.String
   userId String @db.ObjectId @unique
-  user User @relation(fields: [userId],references: [id])
+  user User @relation(fields: [userId],references: [id] , onDelete: Cascade)
   Appointments Appointment[]
 }
 
 model Appointment{
   id String @id @default(auto()) @map("_id") @db.ObjectId
   patientId String @db.ObjectId
-  patient Patient @relation(fields: [patientId], references: [id])
+  patient Patient @relation(fields: [patientId], references: [id] , onDelete: Cascade)
   doctorId String @db.ObjectId
-  doctor Doctor @relation(fields: [doctorId],references: [id])
+  doctor Doctor @relation(fields: [doctorId],references: [id] , onDelete: Cascade)
   reason String?
   AppointmentDateTime DateTime
   status String @default("Scheduled")
   roomId String @db.ObjectId @unique
-  room Room @relation(fields: [roomId], references: [id])
+  room Room @relation(fields: [roomId], references: [id] , onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   prescriptionUrl String? @db.String

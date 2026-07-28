@@ -1,37 +1,25 @@
-import { getSelf } from '@/lib/auth-service'
 import { Navigation } from './navigation'
 import { Toggle } from './toggle'
 import { Wrapper } from './wrapper'
-import { User } from '@prisma/client'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 
 export async function Sidebar() {
 
-	let user : {
-		patient: {
-			id: string;
-		} | null;
-		doctor: {
-			id: string;
-		} | null;
-	} & User
+	const { sessionClaims } = await auth();
 
-	try{
-		user = await getSelf();
-		if(!user.role){
-			redirect('/sign-in');
-		}
+	if(!sessionClaims || !sessionClaims.metadata || !sessionClaims.metadata.role){
+		console.error('Please Setup Your Profile First')
+		redirect('/profile-setup')
 	}
-	catch(e : any){
-        console.log('Internal Server Error',e);
-		redirect('/')
-    }
+
+  	const role = sessionClaims.metadata.role.toLowerCase();
 
 	return (
 		<>
 			<Wrapper>
 				<Toggle />
-				<Navigation role = {user.role}/>
+				<Navigation role = {role}/>
 			</Wrapper>
 		</>
 	)

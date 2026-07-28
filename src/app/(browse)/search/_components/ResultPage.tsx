@@ -72,7 +72,7 @@ export const ResultPage = async () => {
   }
   return (
     <>
-      <div className="my-5 w-[90%]">
+      <div className="my-5 w-[90%] flex flex-col gap-5 mx-auto ">
         {allDoctors.map((doctor) => {
           return (
             <ResultCard

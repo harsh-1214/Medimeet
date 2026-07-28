@@ -11,10 +11,10 @@ export default async function DashBoardLayout({
   children: React.ReactNode;
 }) {
 
-  const self = await getSelf();
-  if(!self){
-    redirect('/sign-in')
-  }
+  // const self = await getSelf();
+  // if(!self){
+  //   redirect('/sign-in')
+  // }
 
   return (
       <div className="flex h-full" suppressHydrationWarning>

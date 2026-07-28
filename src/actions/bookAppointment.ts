@@ -33,14 +33,11 @@ export const bookMyAppointment = async ( {reason,AppointmentDateTime,doctorId} :
          }
      })
 
-     setCookie('role',self.role);
-
      revalidatePath('/u/dashboard/scheduled_appointments');
-     revalidatePath('/u/dashboard/upcoming_Appointments');
 
      return response.id
-   } catch (err) {
-        throw new Error('Internal Server Error')
+   } catch (err : any) {
+        throw new Error( err?.message || 'Internal Server Error')
    }
 }
 
@@ -53,6 +50,6 @@ export const getAppointments = async (status : string) => {
     
         return appointments;
     } catch (err : any) {
-        throw new Error('Internal Server Error')
+        throw new Error(err?.message || 'Internal Server Error')
     }
 }

@@ -4,7 +4,7 @@ export default function Page() {
 
   return (
     <div>
-      <SignIn forceRedirectUrl={'/'}/>
+      <SignIn signUpForceRedirectUrl = {'/profile-setup'} />
     </div>
   );
 }

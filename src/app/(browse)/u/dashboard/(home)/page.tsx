@@ -1,17 +1,25 @@
-import { getSelf } from "@/lib/auth-service";
-import { setCookie } from "cookies-next";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import React from "react";
 
 const DashBoardPage = async () => {
-  const user = await getSelf();
-  if (!user) {
-    redirect("/sign-in");
-  }
-  if (user.role?.toLowerCase() === "doctor") {
-    setCookie('role',user.role);
+  // const user = await getSelf();
+  // console.log(user, "user in dashboard page");
+  // if (!user) {
+  //   redirect("/sign-in");
+  // }
+  // if (user.role?.toLowerCase() === "doctor") {
+  //   setCookie('role',user.role);
+  //   
+  // } else if (user.role?.toLowerCase() === "patient") {
+  //   
+  // }
+
+  const { sessionClaims } = await auth();
+  const role = sessionClaims?.metadata?.role?.toLowerCase();
+  if (role === "doctor") {
     redirect("/u/dashboard/scheduled_appointments");
-  } else if (user.role?.toLowerCase() === "patient") {
+  } else if(role === 'patient') {
     redirect("/u/dashboard/upcoming_Appointments");
   }
 

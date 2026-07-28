@@ -37,7 +37,6 @@ export const getDoctorsAppointments = async (status: string) => {
   try {
     const appointments = await getAppointmentsByStatusOfDoctor(status);
 
-    revalidatePath("/u/dashboard");
     revalidatePath("/u/dashboard/scheduled_appointments");
 
     return appointments;

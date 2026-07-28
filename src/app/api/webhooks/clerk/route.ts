@@ -43,7 +43,6 @@ export async function POST(req: Request) {
 	}
 	const eventType = evt.type
 	if (eventType === 'user.created') {
-        console.log(payload.data)
 		await db.user.create({
 			data: {
 				externalUserId: payload.data.id,
@@ -52,6 +51,7 @@ export async function POST(req: Request) {
 				email : payload.data.email_addresses[0].email_address,
 			}
 		})
+		
 	}
 	if (eventType === 'user.updated') {
 		await db.user.update({

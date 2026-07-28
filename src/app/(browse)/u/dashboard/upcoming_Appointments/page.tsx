@@ -8,22 +8,23 @@ const UpcomingAppointments = async() => {
 
     // Solve Hydration errors
 
-    let appointments : ({
-        doctor: {
-            user: {
-                first_name: string;
-                last_name: string;
-            };
-        };
-      } & Appointment )[];
+    // let appointments : ({
+    //     doctor: {
+    //         user: {
+    //             first_name: string;
+    //             last_name: string;
+    //         };
+    //     };
+    //   } & Appointment )[];
 
-    try{
-        appointments = await getAppointments("Scheduled");
-    }
-    catch{
-        console.error('Please Login First')
-        redirect('/sign-in')
-    }
+    // try{
+    //     appointments = 
+    // }
+    // catch{
+    //     console.error('Please Login First')
+    //     redirect('/sign-in')
+    // }
+    const appointments = await getAppointments("Scheduled");
 
     return (
 

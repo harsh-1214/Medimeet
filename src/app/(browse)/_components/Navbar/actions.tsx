@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button'
 import { currentUser } from '@clerk/nextjs/server'
 
 export async function Actions() {
-	let user;
+	let user = null;
 	try {
 		user = await currentUser()	
 	} catch (err) {
-		console.error('Internal Server Error', { status: 500 })	
+		// gracefully handle the error , if there is network issue or any other issue in fetching the user info then we will set the user to null and render the login button , just make them login again.
+		user = null;
 	}
 
 	return (

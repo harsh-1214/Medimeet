@@ -10,22 +10,24 @@ const ScheduledAppointments = async () => {
 
   // Solve Hydration errors
 
-  let appointments: ({
-    patient: {
-      user: {
-        first_name: string;
-        last_name: string;
-      };
-    };
-  } & Appointment)[];
+  // let appointments: ({
+  //   patient: {
+  //     user: {
+  //       first_name: string;
+  //       last_name: string;
+  //     };
+  //   };
+  // } & Appointment)[];
 
-  try {
-    appointments = await getDoctorsAppointments("Scheduled");
-    setCookie('role','doctor');
-  } catch {
-    console.error("Please Login First");
-    redirect("/sign-in");
-  }
+  // try {
+    
+  //   setCookie('role','doctor');
+  // } catch {
+  //   console.error("Please Login First");
+  //   redirect("/sign-in");
+  // }
+
+  const appointments = await getDoctorsAppointments("Scheduled");
 
   return (
     <div>
