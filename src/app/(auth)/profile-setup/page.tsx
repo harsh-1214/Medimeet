@@ -125,11 +125,11 @@ const ProfileSetup = () => {
         updateUserProfile({ role, ...formData })
           .then(() => {
             toast.success("Successfully Completed Profile");
-            if (role === "doctor") {
-              router.replace("/u/dashboard/scheduled_appointments");
-            } else {
-              router.replace("/u/dashboard/upcoming_Appointments");
-            }
+            // if (role === "doctor") {
+            router.replace("/u/dashboard/");
+            // } else {
+              // router.replace("/u/dashboard/upcoming_Appointments");
+            // }
           })
           .catch((err) => toast.error(err.message || "Something went wrong"));
       });

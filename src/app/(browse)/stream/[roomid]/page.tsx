@@ -11,6 +11,7 @@ import styles from './_components/room.module.css'
 import usePlayer from "@/hooks/usePlayer";
 import { cloneDeep } from "lodash";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 
 
 const RoomPage = ({ params }: { params: { roomid: string } }) => {
@@ -18,6 +19,10 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
   const [peerobj, setPeerobj] = useState<Peer | null>(null);
   const [destPeerId, setDestPeerId] = useState("");
   const [intervalID, setIntervalID] = useState<NodeJS.Timeout | null>(null);
+  const { user } = useUser();
+
+
+
 
   // This User State is Specifically maintain to store the map of Peerid --> call, 
   // SO when Through Socket Io, 'user-leave' event is received, means in room anyone has leaved room,
@@ -36,8 +41,7 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
     leaveRoom
   } = usePlayer(peerId, params.roomid, peerobj);
 
-
-  const isDoctor = getCookie("role") === "doctor";
+  const isDoctor = user?.publicMetadata?.role === "doctor";
 
   useEffect(() => {
     // if (storedPeerId) {

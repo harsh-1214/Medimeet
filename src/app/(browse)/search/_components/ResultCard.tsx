@@ -34,7 +34,7 @@ export const ResultCard = ({
         {/* Use Image component and add that image domain(url) in nextconfig */}
         <div>
           <Image
-            src={imageUrl}
+            src={imageUrl || '/doctor-default-photo.webp'}
             width={200}
             height={200}
             alt="Doctor's portrait"
