@@ -1,59 +1,56 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Define your route matchers
-const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)" , "/"]);
-const isSetupRoute = createRouteMatcher(["/profile-setup"]);
-
-// Cast sessionClaims so TypeScript knows about metadata
-
-export default clerkMiddleware((auth, req) => {
-  try {
-    if (isProtectedRoute(req)) auth().protect();
-
-    const { userId, sessionClaims } = auth();
-
-    const headers = new Headers(req.headers);
-    headers.set("x-current-path", req.nextUrl.searchParams.toString());
-
-    // 1. If the user is logged in
-    // if (userId) {
-    //   // Read onboarding status from sessionClaims
-    //   const claims = sessionClaims as unknown as {
-    //     metadata?: {
-    //       onboardingComplete?: boolean;
-    //     };
-    //   };
-
-      // Now you can safely access it without any TS error:
-      // const onboardingComplete = claims?.metadata?.onboardingComplete;
-      // console.log("Onboarding Complete:", onboardingComplete);
-
-      // // 2. If onboarding is NOT complete, force them to /setup-profile
-      // if (!onboardingComplete && !isSetupRoute(req)) {
-      //   const setupUrl = new URL("/profile-setup", req.url);
-      //   return NextResponse.redirect(setupUrl);
-      // }
-
-      // // 3. Optional: If onboarding IS complete, prevent them from accessing /setup-profile manually
-      // if (onboardingComplete && isSetupRoute(req)) {
-      //   const homeUrl = new URL("/", req.url);
-      //   return NextResponse.redirect(homeUrl);
-      // }
-    // }
-
-    return NextResponse.next({ headers });
-  } catch (err) {
-    console.error(err);
-    return new NextResponse("Authentication error", { status: 404 });
-  }
-});
-
-const isProtectedRoute = createRouteMatcher([
-  "/profile-setup",
-  "/u/dashboard(.*)",
+// 1. Single source of truth: Explicitly define ONLY public routes (Deny-by-Default)
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/search(.*)",
+  "/doctor(.*)",
+  "/api/webhooks(.*)",
 ]);
 
+const isOnboardingRoute = createRouteMatcher(["/profile-setup(.*)"]);
+const isApiRoute = createRouteMatcher(["/api(.*)"]);
+
+export default clerkMiddleware((auth, req) => {
+  const { userId, sessionClaims, redirectToSignIn } = auth();
+
+  // 2. Forward current pathname & query to Server Components via request headers
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-current-path", req.nextUrl.pathname);
+
+  // 3. Unauthenticated users: Block access to any non-public route
+  if (!userId && !isPublicRoute(req)) {
+    return redirectToSignIn({ returnBackUrl: req.url });
+  }
+
+  // 4. Authenticated users: Enforce onboarding flow (skip for API routes)
+  if (userId && !isApiRoute(req)) {
+    const onboardingComplete = sessionClaims?.metadata?.onboardingComplete;
+
+    // Force incomplete users to /profile-setup
+    if (!onboardingComplete && !isOnboardingRoute(req)) {
+      return NextResponse.redirect(new URL("/profile-setup", req.url));
+    }
+
+    // Prevent onboarded users from visiting /profile-setup again
+    if (onboardingComplete && isOnboardingRoute(req)) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+});
+
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
+    "/(api|trpc)(.*)",
+  ],
 };

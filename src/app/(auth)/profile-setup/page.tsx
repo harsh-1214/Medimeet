@@ -31,16 +31,31 @@ import { CldImage } from "next-cloudinary";
 import { UploadCloud } from "lucide-react";
 import { z } from "zod";
 import { doctorSpecializations } from "@/lib/constants";
+import { roleSchema, userSchema } from "@/lib/validations";
+import { useUser } from "@clerk/nextjs";
 
+interface FormState {
+  specializations: string[];
+  fees: string;
+  gender: string; // Keeps TS happy with an empty string ""
+  qualification: string[];
+  experience: string;
+  awards: string[];
+  PhoneNo: string;
+  imageUrl: string;
+  bio: string;
+}
 const ProfileSetup = () => {
   const [role, setRole] = useState("");
   const debounced = useDebounceCallback(handleArrayChange, 500);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [formData, setFormData] = useState({
+  const { user } = useUser();
+
+  const [formData, setFormData] = useState<FormState>({
     specializations: [],
     fees: "",
-    gender: "",
+    gender: '',
     qualification: [],
     experience: "",
     awards: [],
@@ -73,32 +88,6 @@ const ProfileSetup = () => {
     }
     handleInputsArray(value, name);
   }
-  const userSchema = z.object({
-    qualification: z.array(
-      z.string({ message: "Qualifications Cannot be empty!" }),
-    ),
-    specializations: z.array(
-      z.string({ message: "Specialization Cannot be empty" }),
-    ),
-    experience: z.string().refine((value) => /^\d+$/.test(value), {
-      message: "Must be a numeric string",
-    }),
-    awards: z.array(z.string({ message: "Awards Cannot be empty!" })),
-    imageUrl: z.string({ message: "Please Upload Your Profile Picture" }),
-    gender: z.enum(["male", "female"], {
-      message: "Gender must be either male or female",
-    }),
-    fees: z.string().refine((value) => /^\d+$/.test(value), {
-      message: "Must be a numeric string",
-    }),
-    bio: z.string({ message: "Bio Cannot be empty!" }),
-  });
-
-  const roleSchema = z.object({
-    role: z.enum(["doctor", "patient"], {
-      message: "Role must be one of the following",
-    }),
-  });
 
   function handleInputs(val: string, name: string) {
     setFormData((prevData) => ({
@@ -110,32 +99,39 @@ const ProfileSetup = () => {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    const res = userSchema.safeParse(formData);
-    // Also check for res
+    // 1. Validate Role First
     const roleResult = roleSchema.safeParse({ role });
-    console.log(formData, typeof formData.fees);
-
-    if (roleResult.success) {
-      // if(!(role === 'doctor' && res.success)){
-
-      // }
-
-      startTransition(() => {
-        console.log("Submitting form data:", formData, role);
-        updateUserProfile({ role, ...formData })
-          .then(() => {
-            toast.success("Successfully Completed Profile");
-            // if (role === "doctor") {
-            router.replace("/u/dashboard/");
-            // } else {
-              // router.replace("/u/dashboard/upcoming_Appointments");
-            // }
-          })
-          .catch((err) => toast.error(err.message || "Something went wrong"));
-      });
-    } else {
-      toast.error(res.error?.message);
+    if (!roleResult.success) {
+      // .issues[0].message grabs the clean string instead of raw JSON!
+      toast.error(roleResult.error.issues[0].message);
+      return;
     }
+
+    // 2. If Doctor, Validate Doctor Fields Before Calling Server
+    if (role === "doctor") {
+      const res = userSchema.safeParse(formData);
+      if (!res.success) {
+        toast.error(res.error.issues[0].message);
+        return;
+      }
+    }
+
+    // 3. Submit to Server Action
+    startTransition(() => {
+      updateUserProfile({ role, ...formData })
+        .then(async(response) => {
+          if (response && !response.success) {
+            toast.error(response.error);
+            return;
+          }
+          toast.success("Successfully Completed Profile");
+
+          await user?.reload();
+
+          router.replace("/u/dashboard/");
+        })
+        .catch((err) => toast.error(err.message || "Something went wrong"));
+    });
   }
 
   return (

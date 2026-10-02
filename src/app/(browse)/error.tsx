@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 
 interface ErrorPageProps {
@@ -21,12 +22,12 @@ export default function ErrorPage({ err }: ErrorPageProps) {
         >
           Try Again
         </button>
-        <a
+        <Link
           href="/"
           className="text-[#0070f3] hover:underline"
         >
           Go Home
-        </a>
+        </Link>
       </div>
 
       <p className="mt-[30px] text-sm text-[#666]">Error Code: 500</p>

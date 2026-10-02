@@ -3,21 +3,10 @@ import { redirect } from "next/navigation";
 import React from "react";
 
 const DashBoardPage = async () => {
-  // const user = await getSelf();
-  // console.log(user, "user in dashboard page");
-  // if (!user) {
-  //   redirect("/sign-in");
-  // }
-  // if (user.role?.toLowerCase() === "doctor") {
-  //   setCookie('role',user.role);
-  //   
-  // } else if (user.role?.toLowerCase() === "patient") {
-  //   
-  // }
 
-  const { sessionClaims } = await auth();
+  const { sessionClaims } = auth();
   const role = sessionClaims?.metadata?.role?.toLowerCase();
-  console.log(role, "role in dashboard page");
+
   if (role === "doctor") {
     redirect("/u/dashboard/scheduled_appointments");
   } else if(role === 'patient') {

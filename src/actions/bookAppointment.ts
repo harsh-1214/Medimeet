@@ -1,9 +1,7 @@
 'use server'
 
-import { getAppointmentsByStatus } from "@/lib/appointment-service"
 import { getSelf } from "@/lib/auth-service"
 import { db } from "@/lib/db"
-import { setCookie } from "cookies-next"
 import { revalidatePath } from "next/cache"
 
 interface bookMyAppointmentArgs{
@@ -29,27 +27,15 @@ export const bookMyAppointment = async ( {reason,AppointmentDateTime,doctorId} :
              doctorId,
              AppointmentDateTime,
              reason,
+             status : 'scheduled',
              roomId : room.id
          }
      })
 
-     revalidatePath('/u/dashboard/scheduled_appointments');
-
+     revalidatePath('/u/dashboard/upcoming_Appointments');
+    
      return response.id
-   } catch (err : any) {
-        throw new Error( err?.message || 'Internal Server Error')
+   } catch (errors : any) {
+        throw new Error( errors?.message || 'Internal Server Error')
    }
-}
-
-export const getAppointments = async (status : string) => {
-
-    try {
-        const appointments = await getAppointmentsByStatus(status);
-    
-        revalidatePath('/u/dashboard/appointment_history')
-    
-        return appointments;
-    } catch (err : any) {
-        throw new Error(err?.message || 'Internal Server Error')
-    }
 }

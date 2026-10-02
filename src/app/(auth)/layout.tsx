@@ -1,5 +1,5 @@
 import React from "react";
-import { Logo } from "../(browse)/_components/Logo";
+import { Logo } from "../_components/Navbar/Logo";
 
 export default function AuthLayout({
   children,

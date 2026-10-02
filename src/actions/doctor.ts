@@ -28,8 +28,6 @@ export const getDoctors = async ({
   } catch (err: any) {
     // return {message : 'Internal Server Error',success : false,err : err}
     throw new Error("Internal Server Error!!");
-    // console.log(err.stack)
-    // console.log('Internal Server Error')
   }
 };
 
@@ -38,6 +36,7 @@ export const getDoctorsAppointments = async (status: string) => {
     const appointments = await getAppointmentsByStatusOfDoctor(status);
 
     revalidatePath("/u/dashboard/scheduled_appointments");
+    revalidatePath('/u/dashboard/appointment_history')
 
     return appointments;
   } catch (err: any) {

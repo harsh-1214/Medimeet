@@ -3,10 +3,11 @@
 import { getSelf } from "@/lib/auth-service";
 import { db } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { setCookie } from "cookies-next";
 import { clerkClient } from "@clerk/nextjs/server";
+import { roleSchema, userSchema } from "@/lib/validations";
+import { cookies } from "next/headers";
 
 // export const updatePatientProfile = async (values: Partial<Patient>) => {
 //   try {
@@ -66,155 +67,103 @@ export const getUserProfile = async () => {
   return user;
 };
 
-const userSchema = z.object({
-  qualification: z.array(
-    z.string({ message: "Qualifications Cannot be empty!" }),
-  ),
-  specializations: z.array(
-    z.string({ message: "Specialization Cannot be empty" }),
-  ),
-  experience: z.string().refine((value) => /^\d+$/.test(value), {
-    message: "Must be a numeric string",
-  }),
-  awards: z.array(z.string({ message: "Awards Cannot be empty!" })),
-  imageUrl: z.string({ message: "Please Upload Your Profile Picture" }),
-  gender: z.enum(["male", "female"]),
-  fees: z.string().refine((value) => /^\d+$/.test(value), {
-    message: "Must be a numeric string",
-  }),
-  bio: z.string({ message: "Bio Cannot be empty!" }),
-});
-
-const roleSchema = z.object({
-  role: z.enum(["doctor", "patient"], {
-    message: "Role must be one of the following",
-  }),
-});
-
-export const updateUserProfile = async ({
-  qualification,
-  experience,
-  awards,
-  fees,
-  gender,
-  PhoneNo,
-  imageUrl,
-  specializations,
-  role,
-  bio,
-}: {
-  specializations: string[];
-  fees: string;
-  gender: string;
-  qualification: string[];
-  experience: string;
-  awards: string[];
-  PhoneNo: string;
-  imageUrl: string;
+export type ProfileInput = {
   role: string;
-  bio: string;
-}) => {
-  // Check Zod validation if you want
-  const result = roleSchema.safeParse({ role });
+  qualification?: string[];
+  specializations?: string[];
+  experience?: string;
+  awards?: string[];
+  imageUrl?: string;
+  gender?: string; // Now the server accepts it if it's missing for a patient
+  fees?: string;
+  bio?: string;
+  PhoneNo?: string;
+};
 
+export const updateUserProfile = async (data: ProfileInput) => {
   try {
     const self = await getSelf();
-    console.log(self);
-
-    if (result.success && role === "patient") {
-      // Create patient record
-
-      await db.patient.create({
-        data: {
-          userId: self.id,
-        },
-      });
-
-      console.log("Patient record created successfully");
-      // Update User Record
-      await db.user.update({
-        where: {
-          id: self.id,
-        },
-        data: {
-          role,
-        },
-      });
-      console.log("User role updated to patient successfully");
-    } else if (result.success && role === "doctor") {
-      // Create Doctor Record
-
-      console.log('Doctor role selected, validating doctor profile data...');
-      const result = userSchema.safeParse({
-        qualification,
-        gender,
-        fees,
-        specializations,
-        awards,
-        experience,
-        PhoneNo,
-        imageUrl,
-        bio
-      });
-
-      if (result.success) {
-
-        console.log('Doctor profile data validated successfully, creating doctor record...');
-        await db.doctor.create({
-          data: {
-            qualification,
-            gender,
-            fees: Number(fees),
-            specializations,
-            awards,
-            experience: Number(experience),
-            PhoneNo,
-            imageUrl,
-            userId: self.id,
-            bio,
-          },
-        });
-        console.log("Doctor record created successfully");
-
-        console.log('Updating user role to doctor...');
-        // Update User Record
-        await db.user.update({
-          where: {
-            id: self.id,
-          },
-          data: {
-            role,
-          },
-        });
-        console.log("User role updated to doctor successfully");
-      } else {
-        console.error('Doctor profile data validation failed:', result.error);
-        throw new Error(result.error?.message);
-      }
-    } else {
-      throw new Error(result.error?.message);
+    if (!self) {
+      return { success: false, error: "Unauthorized access" };
     }
 
-    setCookie("role", role, {
+    const roleResult = roleSchema.safeParse({ role: data.role });
+    if (!roleResult.success) {
+      return { success: false, error: roleResult.error.issues[0].message };
+    }
+
+    if (data.role === "patient") {
+      // Prisma Transaction: Ensures both actions succeed or both roll back
+      await db.$transaction([
+        db.patient.create({
+          data: { userId: self.id },
+        }),
+        db.user.update({
+          where: { id: self.id },
+          data: { role: data.role },
+        }),
+      ]);
+    } else if (data.role === "doctor") {
+      const result = userSchema.safeParse(data);
+      if (!result.success) {
+        return { success: false, error: result.error.issues[0].message };
+      }
+
+      await db.$transaction([
+        db.doctor.create({
+          data: {
+            qualification: data.qualification,
+            gender: data.gender,
+            fees: Number(data.fees),
+            specializations: data.specializations,
+            awards: data.awards,
+            experience: Number(data.experience),
+            PhoneNo: data.PhoneNo,
+            imageUrl: data.imageUrl,
+            bio: data.bio,
+            userId: self.id,
+          },
+        }),
+        db.user.update({
+          where: { id: self.id },
+          data: { role: data.role },
+        }),
+      ]);
+    }
+
+    // Next.js 14 specific: cookies() is synchronous here.
+    // (In Next.js 15, this would throw an error requiring `await cookies()`)
+    cookies().set("role", data.role, {
       httpOnly: true,
       sameSite: "strict",
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
     });
 
+    // Update Clerk metadata
     await clerkClient.users.updateUserMetadata(self.externalUserId, {
       publicMetadata: {
         onboardingComplete: true,
-        role: role,
+        role: data.role,
       },
-    })
-    
-    const userData = await currentUser();
-    console.log(userData?.publicMetadata, "userData in public metadata");
+    });
 
-
-    revalidatePath("/search");
+    return { success: true };
   } catch (err: any) {
-    throw new Error("Internal Server Error");
+    console.error("Profile Setup Error:", err);
+
+    // Catch database unique constraint errors (e.g., user already has a profile)
+    if (err.code === "P2002") {
+      return {
+        success: false,
+        error: "A profile already exists for this user.",
+      };
+    }
+
+    // Return a clean fallback error to the client instead of crashing Next.js
+    return {
+      success: false,
+      error: "Failed to update profile. Please try again.",
+    };
   }
 };
 

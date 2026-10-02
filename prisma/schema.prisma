@@ -27,14 +27,14 @@ model Patient {
 
 model Doctor {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  imageUrl String @db.String
+  imageUrl String? @db.String
   qualification String[] // MBBS,phd
   specializations String[] // Dentist,Dermatologist, later added
   experience Int // 5 // was a string
   fees Int @default(0) // later added
   awards String[]
-  gender String @db.String // later added
-  bio String @db.String // very later added
+  gender String? @db.String // later added
+  bio String? @db.String // very later added
   PhoneNo String? @db.String
   userId String @db.ObjectId @unique
   user User @relation(fields: [userId],references: [id] , onDelete: Cascade)

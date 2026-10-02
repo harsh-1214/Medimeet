@@ -6,8 +6,9 @@ import { redirect } from 'next/navigation'
 
 export async function Sidebar() {
 
-	const { sessionClaims } = await auth();
+	const { sessionClaims } = auth();
 
+	console.log(sessionClaims);
 	if(!sessionClaims || !sessionClaims.metadata || !sessionClaims.metadata.role){
 		console.error('Please Setup Your Profile First')
 		redirect('/profile-setup')

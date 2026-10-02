@@ -20,7 +20,7 @@ export const getAppointmentsByStatus =  async (status : string) => {
     const appointments = await db.appointment.findMany({
         where : {
             patientId : self.patient.id,
-            status,
+            status : status.toLowerCase(),
         },
         include : {
             doctor : {
@@ -59,7 +59,7 @@ export const getAppointmentsByStatusOfDoctor =  async (status : string) => {
     const appointments = await db.appointment.findMany({
         where : {
             doctorId : self.doctor.id,
-            status,
+            status : status.toLowerCase(),
         },
         include : {
             patient : {

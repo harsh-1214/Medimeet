@@ -1,3 +1,4 @@
+// components/paginationComp.tsx
 "use client";
 
 import {
@@ -10,70 +11,109 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 import qs from "query-string";
 
-export function PaginationComp({activePage} : {activePage : string | null | undefined}) {
+interface PaginationCompProps {
+  activePage?: string | number | null;
+  totalPages?: number;
+}
 
-
-  // If a person came after refresh this will reset to 1
-  const pageNumber = activePage ? Number(activePage) : 1;
-  const [currentPage, setCurrentPage] = useState(pageNumber);
+export function PaginationComp({
+  activePage,
+  totalPages = 1,
+}: PaginationCompProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
+  // Derive currentPage directly from props or URL (no useState needed!)
+  const currentPage = Math.max(
+    1,
+    Number(activePage || searchParams.get("page")) || 1,
+  );
 
-  const arr = [currentPage - 1, currentPage, currentPage + 1];
+  // Only generate page numbers that actually exist (between 1 and totalPages)
+  const visiblePages = [currentPage - 1, currentPage, currentPage + 1].filter(
+    (page) => page >= 1 && page <= totalPages,
+  );
 
-  function handleClick(val: number) {
-
-    const urlQueryParams = searchParams.toString();
-
-    let searchUrl: string;
-    if (!urlQueryParams) {
-      searchUrl = pathname
-    } else {
-      searchUrl = pathname + '?' + urlQueryParams;
+  function handleClick(targetPage: number) {
+    // Hard guard: prevent navigating below page 1, above totalPages, or re-clicking current page
+    if (
+      targetPage < 1 ||
+      targetPage > totalPages ||
+      targetPage === currentPage
+    ) {
+      return;
     }
-    
+
+    // Parse existing query params (?fees=500&gender=male) and merge the new page
+    const currentQuery = qs.parse(searchParams.toString());
+
     const url = qs.stringifyUrl(
       {
-        url: searchUrl,
-        query: {page : val},
+        url: pathname,
+        query: {
+          ...currentQuery,
+          page: targetPage,
+        },
       },
-      { skipEmptyString: true }
+      { skipEmptyString: true, skipNull: true },
     );
-    setCurrentPage(val);
+
     router.push(url);
   }
 
+  // If there's only 1 page (or 0 results), don't render pagination at all
+  if (totalPages <= 1) return null;
+
   return (
-    <Pagination className="">
+    <Pagination className="my-6">
       <PaginationContent>
+        {/* Previous Button */}
         <PaginationItem>
-          <PaginationPrevious disabled = {currentPage === 1} onClick={ () => handleClick(currentPage-1)} />
+          <PaginationPrevious
+            disabled = {currentPage === 1}
+            onClick={() => handleClick(currentPage - 1)}
+            className={
+              currentPage <= 1
+                ? "pointer-events-none opacity-50"
+                : "cursor-pointer"
+            }
+          />
         </PaginationItem>
 
-        {arr.map(
-          (val, ind) =>
-            val >= 1 && (
-              <PaginationItem key={ind}>
-                {/* <PaginationLink href="">{val}</PaginationLink> */}
-                <PaginationLink
-                  isActive = {val === currentPage}
-                  onClick={() => handleClick(val)}
-                >
-                  {val}
-                </PaginationLink>
-              </PaginationItem>
-            )
+        {/* Page Numbers */}
+        {visiblePages.map((val) => (
+          <PaginationItem key={val}>
+            <PaginationLink
+              isActive={val === currentPage}
+              onClick={() => handleClick(val)}
+              className="cursor-pointer"
+            >
+              {val}
+            </PaginationLink>
+          </PaginationItem>
+        ))}
+
+        {/* Only show Ellipsis (...) if there are more pages ahead */}
+        {currentPage + 1 < totalPages && (
+          <PaginationItem>
+            <PaginationEllipsis />
+          </PaginationItem>
         )}
+
+        {/* Next Button */}
         <PaginationItem>
-          <PaginationEllipsis />
-        </PaginationItem>
-        <PaginationItem>
-          <PaginationNext onClick={ () => handleClick(currentPage+1)} />
+          <PaginationNext
+          disabled = {currentPage === totalPages}
+            onClick={() => handleClick(currentPage + 1)}
+            className={
+              currentPage >= totalPages
+                ? "pointer-events-none opacity-50"
+                : "cursor-pointer"
+            }
+          />
         </PaginationItem>
       </PaginationContent>
     </Pagination>

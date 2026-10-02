@@ -20,6 +20,7 @@
 
 .user {
   @apply text-white;
+  background: #000;
 }
 
 .notPlaying {

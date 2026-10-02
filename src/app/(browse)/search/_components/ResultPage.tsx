@@ -1,94 +1,50 @@
-// "use client";
-
-import { getDoctors } from "@/actions/doctor";
+// components/ResultPage.tsx (Server Component)
+import { getAllDoctors, queryParamsInfo } from "@/lib/doctor-service";
 import { ResultCard } from "./ResultCard";
 import { PaginationComp } from "./paginationComp";
-import { headers } from "next/headers";
 
-interface doctorInfo {
-  doctors: ({
-    user: {
-      id: string;
-      email: string;
-      first_name: string;
-      last_name: string;
-      externalUserId: string;
-      role: string | null;
-    };
-  } & {
-    id: string;
-    imageUrl: string;
-    qualification: string[];
-    Experience: string[];
-    Awards: string[];
-    PhoneNo: string | null;
-    userId: string;
-  })[];
+interface ResultPageProps {
+  searchParams: queryParamsInfo;
 }
 
-export const ResultPage = async () => {
-  //   It should be Server Component // not possible
+export const ResultPage = async ({ searchParams }: ResultPageProps) => {
+  // Fetch both the paginated doctors and the pagination metadata
+  const { doctors, pagination } = await getAllDoctors(searchParams);
 
-  // const [allDoctors, setAllDoctors] = useState<doctorInfo["doctors"]>();
+  console.log(doctors)
 
-  // Do pagination in Future
-
-  // const searchParams = useSearchParams();
-
-  // useEffect(() => {
-  //   getDoctors().then((res) => {
-  //     setAllDoctors(res);
-  //   });
-  // }, []);
-  const headerList = headers();
-  const searchParams = headerList.get("x-current-path");
-  const queryParamsArr = searchParams?.split("&");
-  let queryParams: Record<string, string> = {};
-  // = {
-  //   fees: "",
-  //   Experience: "",
-  //   q: "",
-  //   gender: "",
-  //   page : ''
-  // };
-  queryParamsArr?.forEach((val) => {
-    const [key, value] = val.split("=");
-    // queryParams = {
-    // ...queryParams,
-    queryParams[key] = value;
-    // };
-  });
-  // console.log(queryParams,typeof queryParams);
-
-  const allDoctors = await getDoctors({ queryParams });
-
-  if (!allDoctors || allDoctors.length === 0) {
+  if (!doctors || doctors.length === 0) {
     return (
-      <div className="flex justify-center items-center h-full text-center">
-        {/* <LoaderCircleIcon className="animate-spin" /> */}
-        No result Found!!
+      <div className="flex justify-center items-center h-full min-h-[300px] text-center text-gray-500">
+        No doctors found matching your criteria.
       </div>
     );
   }
+
   return (
     <>
-      <div className="my-5 w-[90%] flex flex-col gap-5 mx-auto ">
-        {allDoctors.map((doctor) => {
-          return (
-            <ResultCard
-              first_name={doctor.user.first_name}
-              last_name={doctor.user.last_name}
-              imageUrl={doctor.imageUrl}
-              experience={doctor.experience}
-              fees={doctor.fees}
-              specializations={doctor.specializations}
-              doctorId={doctor.id}
-              key={doctor.id}
-            />
-          );
-        })}
+      <div className="my-5 w-[90%] flex flex-col gap-5 mx-auto">
+        {doctors.map((doctor) => (
+          <ResultCard
+            key={doctor.id}
+            doctorId={doctor.id}
+            first_name={doctor.user.first_name}
+            last_name={doctor.user.last_name}
+            imageUrl={doctor.imageUrl}
+            experience={doctor.experience}
+            fees={doctor.fees}
+            specializations={doctor.specializations}
+          />
+        ))}
       </div>
-      <PaginationComp activePage={queryParams?.page} />
+
+      {/* Only render pagination if there is more than 1 page */}
+      {pagination.totalPages > 1 && (
+        <PaginationComp
+          activePage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+        />
+      )}
     </>
   );
 };

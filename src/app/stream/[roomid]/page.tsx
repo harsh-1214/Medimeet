@@ -1,44 +1,39 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Peer } from "peerjs";
+import { MediaConnection, Peer } from "peerjs";
 import useMediaStream from "@/hooks/useMediaStream";
-import { getCookie } from "cookies-next";
 import axios from "axios";
 import Bottom from "@/components/Bottom";
 import Player from "@/components/Player";
-import styles from './_components/room.module.css'
+import styles from "./_components/room.module.css";
 import usePlayer from "@/hooks/usePlayer";
 import { cloneDeep } from "lodash";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
-
 const RoomPage = ({ params }: { params: { roomid: string } }) => {
   const [peerId, setPeerId] = useState("");
   const [peerobj, setPeerobj] = useState<Peer | null>(null);
   const [destPeerId, setDestPeerId] = useState("");
-  const [intervalID, setIntervalID] = useState<NodeJS.Timeout | null>(null);
-  const { user } = useUser();
+  // const [intervalID, setIntervalID] = useState<NodeJS.Timeout | null>(null);
+  const { user, isLoaded } = useUser();
 
-
-
-
-  // This User State is Specifically maintain to store the map of Peerid --> call, 
+  // This User State is Specifically maintain to store the map of Peerid --> call,
   // SO when Through Socket Io, 'user-leave' event is received, means in room anyone has leaved room,
   // So through Socket io, We will send the user leaved peerId
   // And through that peerid, and this map, I will Do users[UserLeavedPeerId].close(),
-  // means I will close that peer from my side, So UI will be updated. 
-  const [users, setUsers] = useState({})
+  // means I will close that peer from my side, So UI will be updated.
+  const [users, setUsers] = useState({});
   const router = useRouter();
   const {
     players,
     setPlayers,
     playerHighlighted,
     nonHighlightedPlayers,
-    // toggleAudio,
-    // toggleVideo,
-    leaveRoom
+    toggleAudio,
+    toggleVideo,
+    leaveRoom,
   } = usePlayer(peerId, params.roomid, peerobj);
 
   const isDoctor = user?.publicMetadata?.role === "doctor";
@@ -61,38 +56,36 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
       // localStorage.setItem('peerId',id);
     });
 
-
+    return () => {
+      peer.destroy();
+    };
     // }
   }, []);
 
   const { stream } = useMediaStream();
 
-
   useEffect(() => {
-    // testing is not completed
-    const handleWindowClose = async() => {
-      // Your logic here (e.g., alerting the user about unsaved changes)
-      if (!peerId || !peerobj || !isDoctor) return;
-      const res = await axios.post("/api/resetPeerId", {
-        roomId: params.roomid,
-        isDoctor,
-      });
+    const handleWindowClose = () => {
+      if (!peerId || !isDoctor) return;
+
+      // sendBeacon is synchronous and guaranteed to fire even if the tab closes
+      const data = JSON.stringify({ roomId: params.roomid, isDoctor });
+      navigator.sendBeacon(
+        "/api/resetPeerId",
+        new Blob([data], { type: "application/json" }),
+      );
     };
 
     window.addEventListener("beforeunload", handleWindowClose);
-
-    return () => {
-      // Clean up: Remove the event listener when the component unmounts
-      window.removeEventListener("beforeunload", handleWindowClose);
-    };
-  }, []);
+    return () => window.removeEventListener("beforeunload", handleWindowClose);
+  }, [peerId, isDoctor, params.roomid]);
 
   useEffect(() => {
     // console.log(stream);
     // if (!stream) return;
 
-    ;(async () => {
-      if (!peerId || !peerobj || isDoctor === null) return;
+    (async () => {
+      if (!isLoaded || !peerId || !peerobj) return;
 
       const res = await axios.post("/api/setpeerId", {
         peerId,
@@ -101,67 +94,62 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
       });
 
       console.log("Successfully Set in database", res);
-
     })();
 
     // return () => {
     //   ;(async () => {
     //     if (!peerId || !peerobj || isDoctor === null) return;
-  
+
     //     const res = await axios.post("/api/resetPeerId", {
     //       roomId: params.roomid,
     //       isDoctor,
     //     });
     //   })();
     // }
-
-  }, [peerId,peerobj]);
+  }, [peerId, peerobj, isDoctor, params.roomid, isLoaded]);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      (async () => {
-        if (isDoctor === null) return;
-        console.log("Interval is running...");
+    // Wait until Clerk is loaded AND Peer is ready. Stop if we already found the destination.
+    if (user === undefined || !peerId || destPeerId) return;
+
+    const intervalId = setInterval(async () => {
+      console.log("Searching for other user...");
+      try {
         const res = await axios.post("/api/getPeerId", {
           roomId: params.roomid,
           isDoctor,
         });
 
         const OtherdestPeerId = res.data.peerId;
-        // console.log();
-        if (!OtherdestPeerId) return;
-        if (OtherdestPeerId === destPeerId) return;
 
-        setDestPeerId(OtherdestPeerId);
-        console.log("Destination peer Id is : ", OtherdestPeerId);
-      })();
-    }, 10000);
+        if (OtherdestPeerId && OtherdestPeerId !== destPeerId) {
+          setDestPeerId(OtherdestPeerId);
+          clearInterval(intervalId); // Clear it immediately once found!
+        }
+      } catch (error) {
+        console.error("Polling error", error);
+      }
+    }, 3000); // 3 seconds is much better for a demo UX
 
-    setIntervalID(intervalId);
+    // Cleanup when component unmounts or re-renders
+    return () => clearInterval(intervalId);
+  }, [user, isDoctor, peerId, destPeerId, params.roomid]);
 
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!!destPeerId && !!intervalID) {
-      clearInterval(intervalID);
-    }
-  }, [destPeerId]);
+  // useEffect(() => {
+  //   if (!!destPeerId && !!intervalID) {
+  //     clearInterval(intervalID);
+  //   }
+  // }, [destPeerId]);
 
   useEffect(() => {
-    console.log(destPeerId);
-    if (!peerobj || !stream || !destPeerId) return;
+    if (!peerobj || !stream || !destPeerId || !peerId) return;
 
     const call = peerobj.call(destPeerId, stream);
-    console.log("Call is : ", call);
-    // console.log(call);
+
     if (call) {
-      call.on("stream", (incomingStream) => {
-        console.log("Stream Comes from other user : ", incomingStream);
-        setPlayers((prev) => ({
-          ...prev,
+      const handleStream = (incomingStream: MediaStream) => {
+        setPlayers((prev: any) => ({
+          ...(prev[peerId] ? { [peerId]: prev[peerId] } : {}),
           [destPeerId]: {
             url: incomingStream,
             muted: false,
@@ -169,28 +157,35 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
           },
         }));
 
-        setUsers((prev) => ({
+        setUsers((prev: any) => ({
           ...prev,
-          [destPeerId]: call
-        }))
-      });
+          [destPeerId]: call,
+        }));
+      };
+
+      call.on("stream", handleStream);
+      // call.on("close", () => {
+      //   handleUserLeave(destPeerId); // (Use callerId in the incoming call useEffect)
+      // });
+
+      // REQUIRED FOR DEMO: Prevents duplicate video feeds when React re-renders
+      return () => {
+        call.off("stream", handleStream);
+        call.close();
+      };
     }
-  }, [stream, destPeerId]);
+  }, [stream, destPeerId, peerobj, peerId]);
 
   useEffect(() => {
-    if (!stream || !peerobj) return;
+    if (!stream || !peerobj || !peerId) return;
 
-    peerobj.on("call", (call) => {
+    const handleCall = (call: MediaConnection) => {
       const { peer: callerId } = call;
-
-      console.log('Call', call);
       call.answer(stream);
 
-      call.on("stream", (incomingStream) => {
-        console.log(incomingStream);
-        console.log("Called id : ", call.peer);
-        setPlayers((prev) => ({
-          ...prev,
+      call.on("stream", (incomingStream: MediaStream) => {
+        setPlayers((prev: any) => ({
+          ...(prev[peerId] ? { [peerId]: prev[peerId] } : {}),
           [callerId]: {
             url: incomingStream,
             muted: false,
@@ -198,13 +193,20 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
           },
         }));
 
-        setUsers((prev) => ({
+        setUsers((prev: any) => ({
           ...prev,
-          [callerId]: call
-        }))
+          [callerId]: call,
+        }));
       });
-    });
-  }, [stream, peerobj, destPeerId]);
+    };
+
+    peerobj.on("call", handleCall);
+
+    // REQUIRED FOR DEMO: Prevents answering the same call multiple times and crashing the UI
+    return () => {
+      peerobj.off("call", handleCall);
+    };
+  }, [stream, peerobj, peerId]);
 
   useEffect(() => {
     if (!stream || !peerId) return;
@@ -219,12 +221,12 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
     }));
   }, [peerId, setPlayers, stream]);
 
-  const handleUserLeave = (userId : string) => {
+  const handleUserLeave = (userId: string) => {
     console.log(`user ${userId} is leaving the room`);
     const playersCopy = cloneDeep(players);
     delete playersCopy[userId];
     setPlayers(playersCopy);
-  }
+  };
   return (
     <>
       <div className={styles.activePlayerContainer}>
@@ -233,16 +235,15 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
             url={playerHighlighted.url}
             muted={playerHighlighted.muted}
             playing={playerHighlighted.playing}
-            isActive = {true}
+            isActive={true}
           />
         )}
       </div>
       <div className={styles.inActivePlayerContainer}>
-
-        {Object.keys(nonHighlightedPlayers).map((playerId,ind) => {
+        {Object.keys(nonHighlightedPlayers).map((playerId, ind) => {
           const { url, muted, playing } = nonHighlightedPlayers[playerId];
-          console.log(playerId)
-          if(ind === 0) return;
+          console.log(playerId);
+          // if(ind === 0) return;
           // if(!url.active) {
           //   tries.current--;
           //   router.refresh();
@@ -250,7 +251,7 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
           //   //   handleUserLeave(playerId);
           //   // }
           // }
-          console.log(url)
+          console.log(url);
           return (
             <Player
               key={playerId}
@@ -265,8 +266,8 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
       <Bottom
         muted={playerHighlighted?.muted}
         playing={playerHighlighted?.playing}
-        // toggleAudio={toggleAudio}
-        // toggleVideo={toggleVideo}
+        toggleAudio={toggleAudio}
+        toggleVideo={toggleVideo}
         leaveRoom={leaveRoom}
       />
     </>

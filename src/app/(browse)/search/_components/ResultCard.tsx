@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,7 +8,7 @@ import { BookAppointment } from "./bookAppointmentForm";
 interface ResultCardProps {
   first_name: string;
   last_name: string;
-  imageUrl: string;
+  imageUrl: string | null | undefined;
   experience: number;
   specializations: string[];
   doctorId: string;
