@@ -11,7 +11,7 @@ const UpcomingAppointments = async () => {
     redirect("/u/dashboard");
   }
 
-  const appointments = await getAppointmentsByStatus("Scheduled");
+  const appointments = await getAppointmentsByStatus("scheduled");
 
   return (
     <div>
