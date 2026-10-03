@@ -1,15 +1,18 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { cache } from "react";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "./db";
 
-export const getSelf = async () => {
-  const self = await currentUser();
-  
-  if (!self || !self.id) {
+export const getSelf = cache(async () => {
+  // 1. Synchronous JWT read (0ms network latency vs currentUser())
+  const { userId } = auth();
+
+  if (!userId) {
     throw new Error("Please Login First!");
   }
 
+  // 2. Deduplicated Prisma query per request pass
   const user = await db.user.findUnique({
-    where: { externalUserId: self.id },
+    where: { externalUserId: userId },
     include: {
       doctor: { select: { id: true } },
       patient: { select: { id: true } },
@@ -21,4 +24,4 @@ export const getSelf = async () => {
   }
 
   return user;
-};
+});

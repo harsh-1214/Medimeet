@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { renderTimeViewClock } from '@mui/x-date-pickers/timeViewRenderers';
+import { renderTimeViewClock } from "@mui/x-date-pickers/timeViewRenderers";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "./DatePicker";
 import { useRef, useState, useTransition } from "react";
@@ -20,21 +20,34 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFnsV3";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { enIN } from "date-fns/locale";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
-import { format,isPast, isToday } from "date-fns";
+import { format, isPast, isToday } from "date-fns";
 import { bookMyAppointment } from "@/actions/bookAppointment";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-export function BookAppointment({doctorId,variant} : {doctorId: string,variant : "link" | "default" | "destructive" | "outline" | "secondary" | "ghost" | null | undefined})
- {
+export function BookAppointment({
+  doctorId,
+  variant,
+}: {
+  doctorId: string;
+  variant:
+    | "link"
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | null
+    | undefined;
+}) {
   const router = useRouter();
   const [date, setDate] = useState<Date>();
-  const [reason,setReason] = useState(''); 
+  const [reason, setReason] = useState("");
   const [time, setTime] = useState<Date | null>(new Date());
   const [isPending, startTransition] = useTransition();
   const [isEmptyDate, setIsEmptyDate] = useState(false);
   const [isInValidTime, setIsInValidTime] = useState(false);
-  const closeRef = useRef<HTMLButtonElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   function handleDate(val: Date | undefined) {
     setDate(val);
@@ -43,21 +56,20 @@ export function BookAppointment({doctorId,variant} : {doctorId: string,variant :
     }
   }
 
-  function handleTime(timeVal : Date | null){
-    
+  function handleTime(timeVal: Date | null) {
     // Case 1 :- Today Date
-    
-    if(!timeVal || !date){
+
+    if (!timeVal || !date) {
       // Try to send message , Please Select Date First
-      toast.error('Please Select Date First');
-      return
+      toast.error("Please Select Date First");
+      return;
     }
-    if(isToday(date) && isPast(timeVal)){
-      setIsInValidTime(true)
-      return
+    if (isToday(date) && isPast(timeVal)) {
+      setIsInValidTime(true);
+      return;
     }
-    setIsInValidTime(false)
-    setTime(timeVal)
+    setIsInValidTime(false);
+    setTime(timeVal);
   }
 
   function handleSubmit() {
@@ -66,30 +78,34 @@ export function BookAppointment({doctorId,variant} : {doctorId: string,variant :
       return;
     }
     setIsEmptyDate(false);
-    if(isInValidTime) {
-      return
+    if (isInValidTime) {
+      return;
     }
-    const dateTimeString = date.toString().substring(0, 16) + time?.toString().substring(16);
+    const dateTimeString =
+      date.toString().substring(0, 16) + time?.toString().substring(16);
     const mergedDate = new Date(dateTimeString);
 
-
-    startTransition( () => {
-        bookMyAppointment( {reason,AppointmentDateTime : mergedDate,doctorId} )
-        .then( () => {
-          toast.success('Appointment Booked successfully')
-          router.push('/u/dashboard/upcoming_Appointments')
+    startTransition(() => {
+      bookMyAppointment({ reason, AppointmentDateTime: mergedDate, doctorId })
+        .then((result) => {
+          if (!result.success) {
+            toast.error(result.error); // Displays "Please Login First!" or "Doctors cannot book..."
+            return;
+          }
+          toast.success("Appointment Booked successfully");
+          router.push("/u/dashboard/upcoming_Appointments");
         })
-        .catch( (err) => {
-          toast.error(err?.message)
-          router.replace('/sign-in')
+        .catch(() => {
+          toast.error("Network error. Please check your connection.");
         });
-    })
-
+    });
   }
   return (
     <Dialog>
       <DialogTrigger className="w-full" asChild>
-        <Button className="w-full" variant={variant} >Book Appointment</Button>
+        <Button className="w-full" variant={variant}>
+          Book Appointment
+        </Button>
       </DialogTrigger>
       {/* sm:max-w-[425px] */}
       <DialogContent className="">
@@ -109,7 +125,7 @@ export function BookAppointment({doctorId,variant} : {doctorId: string,variant :
               placeholder="Reason for your appointment..."
               className=""
               value={reason}
-              onChange={ (ev) => setReason(ev.target.value)}
+              onChange={(ev) => setReason(ev.target.value)}
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -137,13 +153,12 @@ export function BookAppointment({doctorId,variant} : {doctorId: string,variant :
               />
             </LocalizationProvider>
             <span className="text-red-500 text-sm">
-              {isInValidTime && 'Please Select a Valid Time'}
+              {isInValidTime && "Please Select a Valid Time"}
             </span>
           </div>
         </div>
         <DialogFooter>
-        <DialogClose ref={closeRef}>
-        </DialogClose>
+          <DialogClose ref={closeRef}></DialogClose>
           <Button disabled={isPending} onClick={handleSubmit}>
             Submit
           </Button>

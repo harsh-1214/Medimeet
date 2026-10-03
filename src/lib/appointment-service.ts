@@ -1,80 +1,79 @@
-import { getSelf } from "./auth-service"
+import { getSelf } from "./auth-service";
 import { db } from "./db";
 
+// Define valid statuses so TypeScript catches typos immediately
+export type AppointmentStatus = "scheduled" | "completed";
 
-export const getAppointmentsByStatus =  async (status : string) => {
+export const getAppointmentsByStatus = async (status: AppointmentStatus | string) => {
+  // 1. getSelf() automatically throws "Please Login First!" if unauthenticated
+  const self = await getSelf();
 
-    const self = await getSelf();
+  if (self.doctor?.id) {
+    throw new Error("Unauthorized: Doctors cannot view the patient appointments page.");
+  }
 
-    // Catch the error here if you want of User nor found
+  if (!self.patient?.id) {
+    throw new Error("Patient profile not found. Please complete your profile setup.");
+  }
 
-    if(self.doctor?.id){
-        throw new Error('Doctor Cannot Book appointments')
-    }
-
-    if(!self.patient?.id){
-        // User is not Logged in
-        throw new Error('Please Login First');
-    }
-
-    const appointments = await db.appointment.findMany({
-        where : {
-            patientId : self.patient.id,
-            status : status.toLowerCase(),
-        },
-        include : {
-            doctor : {
-                select : {
-                    user : {
-                        select : {
-                            first_name : true,
-                            last_name : true,
-                        }
-                    }
-                }
+  const appointments = await db.appointment.findMany({
+    where: {
+      patientId: self.patient.id,
+      status: status.toLowerCase(),
+    },
+    include: {
+      doctor: {
+        select: {
+          user: {
+            select: {
+              first_name: true,
+              last_name: true,
             },
-        }
-    })
-
-    return appointments
-}
-
-
-export const getAppointmentsByStatusOfDoctor =  async (status : string) => {
-
-    const self = await getSelf();
-
-    // Catch the error here if you want of User nor found
-
-    
-    if(self.patient?.id){
-        // User is not Logged in
-        throw new Error('Patient Cannot Schedule Appointments');
-    }
-
-    if(!self.doctor?.id){
-        throw new Error('Please Login First')
-    }
-
-    const appointments = await db.appointment.findMany({
-        where : {
-            doctorId : self.doctor.id,
-            status : status.toLowerCase(),
+          },
         },
-        include : {
-            patient : {
-                select : {
-                    user : {
-                        select : {
-                            first_name : true,
-                            last_name : true,
-                        }
-                    }
-                }
-            }
-        }
-    })
+      },
+    },
+    // 2. Sort appointments chronologically
+    orderBy: {
+      AppointmentDateTime: "asc",
+    },
+  });
 
-    return appointments
-}
+  return appointments;
+};
 
+export const getAppointmentsByStatusOfDoctor = async (status: AppointmentStatus | string) => {
+  const self = await getSelf();
+
+  if (self.patient?.id) {
+    throw new Error("Unauthorized: Patients cannot access the doctor schedule.");
+  }
+
+  if (!self.doctor?.id) {
+    throw new Error("Doctor profile not found. Please complete your profile setup.");
+  }
+
+  const appointments = await db.appointment.findMany({
+    where: {
+      doctorId: self.doctor.id,
+      status: status.toLowerCase(),
+    },
+    include: {
+      patient: {
+        select: {
+          user: {
+            select: {
+              first_name: true,
+              last_name: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      AppointmentDateTime: "asc",
+    },
+  });
+
+  return appointments;
+};

@@ -1,4 +1,3 @@
-// components/ResultPage.tsx (Server Component)
 import { getAllDoctors, queryParamsInfo } from "@/lib/doctor-service";
 import { ResultCard } from "./ResultCard";
 import { PaginationComp } from "./paginationComp";
@@ -10,8 +9,6 @@ interface ResultPageProps {
 export const ResultPage = async ({ searchParams }: ResultPageProps) => {
   // Fetch both the paginated doctors and the pagination metadata
   const { doctors, pagination } = await getAllDoctors(searchParams);
-
-  console.log(doctors)
 
   if (!doctors || doctors.length === 0) {
     return (

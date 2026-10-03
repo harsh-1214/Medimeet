@@ -47,3 +47,7 @@ export const roleSchema = z.object({
     errorMap: () => ({ message: "Please select a role (Doctor or Patient)" }),
   }),
 });
+
+export const doctorIdSchema = z
+  .string()
+  .regex(/^[0-9a-fA-F]{24}$/, "Please Visit Valid Doctor Profile");

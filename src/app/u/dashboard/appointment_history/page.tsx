@@ -1,8 +1,7 @@
 import Component from "../_components/upComingHistoryBlock";
 import ScheduledAppointmentsComponent from "../_components/scheduledAppointments";
-import { getDoctorsAppointments } from "@/actions/doctor";
 import { auth } from "@clerk/nextjs/server";
-import { getAppointmentsByStatus } from "@/lib/appointment-service";
+import { getAppointmentsByStatus, getAppointmentsByStatusOfDoctor } from "@/lib/appointment-service";
 
 
 
@@ -21,7 +20,7 @@ export default async function AppointmentHistory(){
         );
     }
     else{
-        const doctorAppointments = await getDoctorsAppointments('completed');
+        const doctorAppointments = await getAppointmentsByStatusOfDoctor('completed');
         return (
             <div>
                 <ScheduledAppointmentsComponent appointments={doctorAppointments} title="Appointment History"/>

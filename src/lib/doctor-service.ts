@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { doctorIdSchema } from "./validations";
 
 // Update your queryParamsInfo type to accept page
 export interface queryParamsInfo {
@@ -24,12 +25,16 @@ export const getAllDoctors = async (queryParams: queryParamsInfo) => {
 
     // 2. Safely Parse Numbers (Avoids the Number("") === 0 bug)
     const feesInNum =
-      queryParams?.fees && queryParams.fees.trim() !== "" && !isNaN(Number(queryParams.fees))
+      queryParams?.fees &&
+      queryParams.fees.trim() !== "" &&
+      !isNaN(Number(queryParams.fees))
         ? Number(queryParams.fees)
         : undefined;
 
     const exp =
-      queryParams?.Experience && queryParams.Experience.trim() !== "" && !isNaN(Number(queryParams.Experience))
+      queryParams?.Experience &&
+      queryParams.Experience.trim() !== "" &&
+      !isNaN(Number(queryParams.Experience))
         ? Number(queryParams.Experience)
         : undefined;
 
@@ -55,7 +60,13 @@ export const getAllDoctors = async (queryParams: queryParamsInfo) => {
           },
           // Also allow matching last_name if they only typed one word
           ...(nameParts.length === 1
-            ? [{ user: { last_name: { contains: firstName, mode: "insensitive" } } }]
+            ? [
+                {
+                  user: {
+                    last_name: { contains: firstName, mode: "insensitive" },
+                  },
+                },
+              ]
             : []),
           {
             specializations: {
@@ -71,7 +82,7 @@ export const getAllDoctors = async (queryParams: queryParamsInfo) => {
       const uppFeesBound = FEE_BOUNDS[feesInNum] ?? 100000;
       andConditions.push({
         fees: {
-          gt: feesInNum,
+          gte: feesInNum,
           lte: uppFeesBound,
         },
       });
@@ -112,9 +123,7 @@ export const getAllDoctors = async (queryParams: queryParamsInfo) => {
             },
           },
         },
-        orderBy: {
-          experience: "desc", // Keeps pagination order consistent (or use id: "asc")
-        },
+        orderBy: [{ experience: "desc" }, { id: "asc" }],
         skip,
         take: limit,
       }),
@@ -134,16 +143,24 @@ export const getAllDoctors = async (queryParams: queryParamsInfo) => {
       },
     };
   } catch (err: any) {
-    console.error("Error fetching doctors:", err);
-    return {
-      doctors: [],
-      pagination: {
-        totalCount: 0,
-        totalPages: 0,
-        currentPage: 1,
-        hasNextPage: false,
-        hasPrevPage: false,
-      },
-    };
+    console.error("[GET_ALL_DOCTORS_ERROR]:", err);
+    // Re-throw so the Server Component triggers error.tsx instead of faking "0 doctors found"
+    throw new Error("Failed to load doctors list. Please try again.");
   }
+};
+
+export const getDoctorProfile = async (doctorId: string) => {
+  const result = doctorIdSchema.safeParse(doctorId);
+  if (!result.success) {
+    throw new Error(result.error.issues[0].message);
+  }
+
+  const doctor = await db.doctor.findUnique({
+    where: { id: doctorId },
+    include: { user: true },
+  });
+  if (!doctor) {
+    throw new Error("Doctor not Found");
+  }
+  return doctor;
 };

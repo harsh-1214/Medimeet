@@ -1,8 +1,8 @@
-import { getDoctorsAppointments } from "@/actions/doctor";
 import React from "react";
 import ScheduledAppointmentsComponent from "../_components/scheduledAppointments";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
+import { getAppointmentsByStatusOfDoctor } from "@/lib/appointment-service";
 
 const ScheduledAppointments = async () => {
 
@@ -13,7 +13,7 @@ const ScheduledAppointments = async () => {
     redirect('/u/dashboard');
   }
 
-  const appointments = await getDoctorsAppointments("Scheduled");
+  const appointments = await getAppointmentsByStatusOfDoctor("scheduled");
 
   return (
     <div>

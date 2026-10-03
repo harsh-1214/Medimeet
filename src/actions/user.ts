@@ -2,9 +2,6 @@
 
 import { getSelf } from "@/lib/auth-service";
 import { db } from "@/lib/db";
-import { currentUser } from "@clerk/nextjs/server";
-import { z } from "zod";
-import { setCookie } from "cookies-next";
 import { clerkClient } from "@clerk/nextjs/server";
 import { roleSchema, userSchema } from "@/lib/validations";
 import { cookies } from "next/headers";
@@ -26,14 +23,14 @@ import { cookies } from "next/headers";
 //       throw new Error("Unauthorized");
 //     }
 
-//     const newPatient = await db.patient.update({
+//     const newPatient = await db.user.update({
 //       where: {
 //         id: oldPatient.id,
 //       },
 //       data: {
-//         email: values.email,
-//         first_name: values.first_name,
-//         last_name: values.last_name,
+//         // email: values.email,
+//         // first_name: values.first_name,
+//         // last_name: values.last_name,
 //       },
 //     });
 
@@ -44,28 +41,28 @@ import { cookies } from "next/headers";
 //   }
 // };
 
-export const getUserProfile = async () => {
-  const self = await getSelf();
+// export const getUserProfile = async () => {
+//   const self = await getSelf();
 
-  if (!self) {
-    throw new Error("Unauthorized");
-  }
-  const user = await db.user.findUnique({
-    where: {
-      id: self.id,
-    },
-    select: {
-      email: true,
-      first_name: true,
-      last_name: true,
-    },
-  });
+//   if (!self) {
+//     throw new Error("Unauthorized");
+//   }
+//   const user = await db.user.findUnique({
+//     where: {
+//       id: self.id,
+//     },
+//     select: {
+//       email: true,
+//       first_name: true,
+//       last_name: true,
+//     },
+//   });
 
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
-  return user;
-};
+//   if (!user) {
+//     throw new Error("Unauthorized");
+//   }
+//   return user;
+// };
 
 export type ProfileInput = {
   role: string;
@@ -167,39 +164,39 @@ export const updateUserProfile = async (data: ProfileInput) => {
   }
 };
 
-export const getUserInfo = async () => {
-  try {
-    const self = await currentUser();
+// export const getUserInfo = async () => {
+//   try {
+//     const self = await currentUser();
 
-    if (!self || !self.id) {
-      throw new Error("Please Login First!");
-    }
+//     if (!self || !self.id) {
+//       throw new Error("Please Login First!");
+//     }
 
-    const user = await db.user.findUnique({
-      where: {
-        externalUserId: self.id,
-      },
-      include: {
-        doctor: {
-          select: {
-            id: true,
-          },
-        },
-        patient: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
+//     const user = await db.user.findUnique({
+//       where: {
+//         externalUserId: self.id,
+//       },
+//       include: {
+//         doctor: {
+//           select: {
+//             id: true,
+//           },
+//         },
+//         patient: {
+//           select: {
+//             id: true,
+//           },
+//         },
+//       },
+//     });
 
-    console.log(user);
+//     console.log(user);
 
-    if (!user) {
-      throw new Error("User not found");
-    }
-    return user;
-  } catch (err: any) {
-    throw new Error("Please Login First");
-  }
-};
+//     if (!user) {
+//       throw new Error("User not found");
+//     }
+//     return user;
+//   } catch (err: any) {
+//     throw new Error("Please Login First");
+//   }
+// };
