@@ -16,7 +16,6 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
   const [peerId, setPeerId] = useState("");
   const [peerobj, setPeerobj] = useState<Peer | null>(null);
   const [destPeerId, setDestPeerId] = useState("");
-  // const [intervalID, setIntervalID] = useState<NodeJS.Timeout | null>(null);
   const { user, isLoaded } = useUser();
 
   // This User State is Specifically maintain to store the map of Peerid --> call,
@@ -25,7 +24,6 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
   // And through that peerid, and this map, I will Do users[UserLeavedPeerId].close(),
   // means I will close that peer from my side, So UI will be updated.
   const [users, setUsers] = useState({});
-  const router = useRouter();
   const {
     players,
     setPlayers,
@@ -39,16 +37,7 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
   const isDoctor = user?.publicMetadata?.role === "doctor";
 
   useEffect(() => {
-    // if (storedPeerId) {
-    //   const peer = new Peer(storedPeerId);
-    //   setPeerobj(peer);
-    //   peer.on("open", (id) => {
-    //     console.log(`My peer ID is: ${id}`);
-    //     setPeerId(id);
-    //   });
-    //   peer.reconnect();
-    //   console.log(peer);
-    // } else {
+    
     const peer = new Peer(); // Create a Peer object
     setPeerobj(peer);
     peer.on("open", (id) => {
@@ -96,16 +85,6 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
       console.log("Successfully Set in database", res);
     })();
 
-    // return () => {
-    //   ;(async () => {
-    //     if (!peerId || !peerobj || isDoctor === null) return;
-
-    //     const res = await axios.post("/api/resetPeerId", {
-    //       roomId: params.roomid,
-    //       isDoctor,
-    //     });
-    //   })();
-    // }
   }, [peerId, peerobj, isDoctor, params.roomid, isLoaded]);
 
   useEffect(() => {
@@ -219,7 +198,7 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
         playing: true,
       },
     }));
-  }, [peerId, setPlayers, stream]);
+  }, [peerId, stream]);
 
   const handleUserLeave = (userId: string) => {
     console.log(`user ${userId} is leaving the room`);
