@@ -8,8 +8,6 @@ import Bottom from "@/components/Bottom";
 import Player from "@/components/Player";
 import styles from "./_components/room.module.css";
 import usePlayer from "@/hooks/usePlayer";
-import { cloneDeep } from "lodash";
-import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
 const RoomPage = ({ params }: { params: { roomid: string } }) => {
@@ -18,12 +16,6 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
   const [destPeerId, setDestPeerId] = useState("");
   const { user, isLoaded } = useUser();
 
-  // This User State is Specifically maintain to store the map of Peerid --> call,
-  // SO when Through Socket Io, 'user-leave' event is received, means in room anyone has leaved room,
-  // So through Socket io, We will send the user leaved peerId
-  // And through that peerid, and this map, I will Do users[UserLeavedPeerId].close(),
-  // means I will close that peer from my side, So UI will be updated.
-  const [users, setUsers] = useState({});
   const {
     players,
     setPlayers,
@@ -129,11 +121,6 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
             playing: true,
           },
         }));
-
-        setUsers((prev: any) => ({
-          ...prev,
-          [destPeerId]: call,
-        }));
       };
 
       call.on("stream", handleStream);
@@ -165,11 +152,6 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
             playing: true,
           },
         }));
-
-        setUsers((prev: any) => ({
-          ...prev,
-          [callerId]: call,
-        }));
       });
     };
 
@@ -200,7 +182,7 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
         {playerHighlighted && (
           <Player
             url={playerHighlighted.url}
-            muted={playerHighlighted.muted}
+            muted={true}
             playing={playerHighlighted.playing}
             isActive={true}
           />
