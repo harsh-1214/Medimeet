@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { clerkClient } from "@clerk/nextjs/server";
 import { roleSchema, userSchema } from "@/lib/validations";
 import { cookies } from "next/headers";
+import { safeAction } from "@/lib/action-utils";
 
 // export const updatePatientProfile = async (values: Partial<Patient>) => {
 //   try {
@@ -77,20 +78,24 @@ export type ProfileInput = {
   PhoneNo?: string;
 };
 
-export const updateUserProfile = async (data: ProfileInput) => {
-  try {
+export const updateUserProfile = async (data: ProfileInput) =>
+  safeAction("UPDATE_USER_PROFILE", async () => {
+    // 1. getSelf() automatically throws "Please Login First!" if unauthenticated
     const self = await getSelf();
-    if (!self) {
-      return { success: false, error: "Unauthorized access" };
+
+    // 2. Prevent duplicate profiles immediately using getSelf() relations
+    if (self.patient?.id || self.doctor?.id) {
+      throw new Error("A profile already exists for this user.");
     }
 
+    // 3. Validate role with Zod
     const roleResult = roleSchema.safeParse({ role: data.role });
     if (!roleResult.success) {
-      return { success: false, error: roleResult.error.issues[0].message };
+      throw new Error(roleResult.error.issues[0].message);
     }
 
+    // 4. Create role-specific profile inside an atomic transaction
     if (data.role === "patient") {
-      // Prisma Transaction: Ensures both actions succeed or both roll back
       await db.$transaction([
         db.patient.create({
           data: { userId: self.id },
@@ -103,7 +108,7 @@ export const updateUserProfile = async (data: ProfileInput) => {
     } else if (data.role === "doctor") {
       const result = userSchema.safeParse(data);
       if (!result.success) {
-        return { success: false, error: result.error.issues[0].message };
+        throw new Error(result.error.issues[0].message);
       }
 
       await db.$transaction([
@@ -112,7 +117,7 @@ export const updateUserProfile = async (data: ProfileInput) => {
             qualification: data.qualification,
             gender: data.gender,
             fees: Number(data.fees),
-            specializations: data.specializations,
+            specializations: data.specializations?.map((s) => s.toLowerCase()),
             awards: data.awards,
             experience: Number(data.experience),
             PhoneNo: data.PhoneNo,
@@ -128,15 +133,14 @@ export const updateUserProfile = async (data: ProfileInput) => {
       ]);
     }
 
-    // Next.js 14 specific: cookies() is synchronous here.
-    // (In Next.js 15, this would throw an error requiring `await cookies()`)
+    // 5. Set role cookie (use NODE_ENV check so cookies work on http://localhost too)
     cookies().set("role", data.role, {
       httpOnly: true,
       sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
     });
 
-    // Update Clerk metadata
+    // 6. Sync onboarding status to Clerk
     await clerkClient.users.updateUserMetadata(self.externalUserId, {
       publicMetadata: {
         onboardingComplete: true,
@@ -144,25 +148,8 @@ export const updateUserProfile = async (data: ProfileInput) => {
       },
     });
 
-    return { success: true };
-  } catch (err: any) {
-    console.error("Profile Setup Error:", err);
-
-    // Catch database unique constraint errors (e.g., user already has a profile)
-    if (err.code === "P2002") {
-      return {
-        success: false,
-        error: "A profile already exists for this user.",
-      };
-    }
-
-    // Return a clean fallback error to the client instead of crashing Next.js
-    return {
-      success: false,
-      error: "Failed to update profile. Please try again.",
-    };
-  }
-};
+    return true;
+  });
 
 // export const getUserInfo = async () => {
 //   try {

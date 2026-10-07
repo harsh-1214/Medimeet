@@ -1,86 +1,80 @@
-'use server'
+"use server";
 
-import { db } from "@/lib/db"
-import { revalidatePath } from "next/cache"
+import { safeAction } from "@/lib/action-utils";
+import { db } from "@/lib/db";
+import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 
+export const getPeerId = async (roomId: string, isDoctor: boolean) =>
+  safeAction("GET_PEER_ID", async () => {
+    const { userId } = auth();
+    if (!userId) throw new Error("Unauthorized");
 
-export const getPeerId = async(roomId : string,isDoctor : boolean) => {
+    const room = await db.room.findUnique({
+      where: { id: roomId },
+      select: {
+        patientPeerId: true,
+        doctorPeerId: true,
+      },
+    });
 
-    const room = await db.room.findUnique({where : {id : roomId}})
-
-    if(!room){
-        throw new Error('Room Not Found')
+    if (!room) {
+      throw new Error("Video consultation room not found.");
     }
 
     return isDoctor ? room.patientPeerId : room.doctorPeerId;
-}
+  });
 
-export const setPeerIdinDb = async(peerId : string,roomId : string,isDoctor : boolean) => {
+export const setPeerIdinDb = async (
+  peerId: string,
+  roomId: string,
+  isDoctor: boolean,
+) =>
+  safeAction("SET_PEER_ID", async () => {
+    const { userId } = auth();
+    if (!userId) throw new Error("Unauthorized");
 
-    const updateField = isDoctor ? 'doctorPeerId' : 'patientPeerId' ;
+    const updateField = isDoctor ? "doctorPeerId" : "patientPeerId";
 
     await db.room.update({
-        where : {
-            id : roomId,
-        },
-        data : {
-            [updateField] : peerId,
-        }
-    })
+      where: { id: roomId },
+      data: { [updateField]: peerId },
+    });
 
-}
+    return true;
+  });
 
-export async function isDoctorByExternalId (id : string | null | undefined){
+export const updateAppointmentStatus = async (roomId: string) =>
+  safeAction("UPDATE_APPOINTMENT_STATUS", async () => {
+    const { userId } = auth();
+    if (!userId) throw new Error("Unauthorized");
 
-    if(!id) return;
+    await db.appointment.update({
+      where: { roomId },
+      data: { status: "completed" },
+    });
 
-    const user = await db.user.findUnique({
-        where : {
-            externalUserId : id,
-        },
-        select : {
-            role : true,
-        }
-    })
-    console.log(user)
+    revalidatePath("/u/dashboard/upcoming_Appointments");
+    revalidatePath("/u/dashboard/appointment_history");
 
-    if(!user || !user?.role){
-        throw new Error('User Not Found')
+    return true;
+  });
+
+export const addAppointmentPrescription = async (id: string, url: string) =>
+  safeAction("ADD_PRESCRIPTION", async () => {
+    const { userId} = auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    if (!url || !url.trim()) {
+      throw new Error("Invalid prescription URL.");
     }
 
-    return user.role;
-}
+    await db.appointment.update({
+      where: { id },
+      data: { prescriptionUrl: url.trim() },
+    });
 
-export const updateAppointmentStatus = async(roomId : string) => {
+    revalidatePath("/u/dashboard/appointment_history");
 
-    try {
-        await db.appointment.update({
-            where : {
-                roomId,
-            },
-            data : {
-                status : 'completed'
-            }
-        })
-        revalidatePath('/u/appointment_history');
-    } catch (err) {
-        console.log('Internal Server Error');
-    }
-
-}
-
-export const addAppointmentPrescription = async(id : string,url : string) => {
-
-    try {
-            await db.appointment.update({
-                where : {
-                    id,
-                },
-                data : {
-                    prescriptionUrl : url
-                }
-            })        
-    } catch (err) {
-        console.log('Internal Server Error');
-    }
-} 
+    return true;
+  });
