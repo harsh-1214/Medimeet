@@ -1,36 +1,41 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
-import React from "react";
 
-interface ErrorPageProps {
-  err?: {
-    message?: string;
-  };
-}
+export default function ErrorView({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error("[APP_ERROR]:", error);
+  }, [error]);
 
-export default function ErrorPage({ err }: ErrorPageProps) {
   return (
-    <div className="flex flex-col items-center justify-center p-12 text-center font-sans text-[#333]">
-      <h1 className="mb-2.5 text-5xl font-bold text-[#0070f3]">Oops!</h1>
-      <p className="mb-5 text-xl">{err?.message}</p>
-      
-      <div className="mt-5 flex items-center justify-center space-x-4">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center space-y-4">
+      <h2 className="text-xl font-semibold text-slate-800">
+        Something went wrong!
+      </h2>
+      <p className="text-sm text-slate-500 max-w-md">
+        We couldn&apos;t load this section right now. Please try again.
+      </p>
+      <div className="flex gap-x-3">
         <button
-          onClick={() => window.location.reload()}
-          className="rounded bg-[#0070f3] px-5 py-2.5 text-white transition-colors hover:bg-blue-700 cursor-pointer"
+          onClick={() => reset()}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium"
         >
           Try Again
         </button>
         <Link
           href="/"
-          className="text-[#0070f3] hover:underline"
+          className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium"
         >
           Go Home
         </Link>
       </div>
-
-      <p className="mt-[30px] text-sm text-[#666]">Error Code: 500</p>
     </div>
   );
 }

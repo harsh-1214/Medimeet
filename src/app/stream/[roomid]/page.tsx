@@ -114,12 +114,6 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
     return () => clearInterval(intervalId);
   }, [user, isDoctor, peerId, destPeerId, params.roomid]);
 
-  // useEffect(() => {
-  //   if (!!destPeerId && !!intervalID) {
-  //     clearInterval(intervalID);
-  //   }
-  // }, [destPeerId]);
-
   useEffect(() => {
     if (!peerobj || !stream || !destPeerId || !peerId) return;
 
@@ -200,12 +194,6 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
     }));
   }, [peerId, stream]);
 
-  const handleUserLeave = (userId: string) => {
-    console.log(`user ${userId} is leaving the room`);
-    const playersCopy = cloneDeep(players);
-    delete playersCopy[userId];
-    setPlayers(playersCopy);
-  };
   return (
     <>
       <div className={styles.activePlayerContainer}>
@@ -222,14 +210,6 @@ const RoomPage = ({ params }: { params: { roomid: string } }) => {
         {Object.keys(nonHighlightedPlayers).map((playerId, ind) => {
           const { url, muted, playing } = nonHighlightedPlayers[playerId];
           console.log(playerId);
-          // if(ind === 0) return;
-          // if(!url.active) {
-          //   tries.current--;
-          //   router.refresh();
-          //   // if(tries.current === 0) {
-          //   //   handleUserLeave(playerId);
-          //   // }
-          // }
           console.log(url);
           return (
             <Player
